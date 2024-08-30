@@ -1,0 +1,130 @@
+
+
+import java_cup.runtime.*;
+
+
+// Definir el HashMap para almacenar las gráficas
+parser code {:
+
+ /**
+     * Método al que se llama automáticamente ante algún error sintactico.
+     **/ 
+    public void syntax_error(Symbol s){ 
+        System.out.println("Error Sintáctico en la Línea " + (s.left) +
+        " Columna "+s.right+ ". No se esperaba este componente: " +s.value+"."); 
+
+        PanelReporte.agregarError(new Errores("Sintactico",String.valueOf(s.value),"no se esperaba: "+String.valueOf( s.value), s.left, s.right));
+    } 
+    /**
+     * Método al que se llama cuando se identifica un error sintáctico en el que 
+     * ya no es posible una recuperación de errores.
+     **/ 
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{ 
+        System.out.println("Error síntactico irrecuperable en la Línea " + 
+        (s.left)+ " Columna "+s.right+". Componente " + s.value + " no reconocido."); 
+    } 
+
+    // resultado final ¡: 
+    private double resultadoFinal; 
+
+    // metodo para obtener el resultado final:
+
+    public double getResultadoFinal(){
+        return resultadoFinal;
+    }
+
+:}
+
+
+// Definir terminales
+
+terminal String  LPAREN, RPAREN, PLUS, MINUS, TIMES, DIVIDE;
+
+
+terminal Double NUMERO;
+
+/// definir no terminales: 
+non terminal  instrucciones;
+non terminal Double expre, term, factor;
+
+
+
+start with instrucciones; 
+
+///  Definir la gramatica: 
+
+
+
+instrucciones ::= expre:e instrucciones
+                | expre:e
+                {:
+                    // Almacenar el resultado final de todas las operaciones
+                    resultadoFinal = e;
+                    System.out.println("Resultado final: " + resultadoFinal);
+                    RESULT = resultadoFinal;
+                :}
+                | error expre:e {: :};
+
+// Operaciones matemáticas
+
+expre ::= expre:e1 PLUS term:e2
+            {: 
+                // Obtener la línea y columna del primer símbolo (e1)
+                int linea = e1left;
+                int columna = e1right;
+               // Reporte de suma
+               String operacion = e1 + " + " + e2;
+               
+             //  reporteOperaciones.add(new Operadores("Suma",linea,columna,operacion));
+               RESULT = e1 + e2 ; 
+            :}
+            | expre:e1 MINUS term:e2
+            {: 
+                // Obtener la línea y columna del primer símbolo (e1)
+                int linea =  e1left;
+                int columna =  e1right;
+               // Reporte de resta
+               String operacion = e1 + " - " + e2;
+               //reporteOperaciones.add(new Operadores("Resta",linea,columna,operacion));
+               RESULT =e1 - e2 ; 
+            :}
+            | term:e
+            {: RESULT =  e ; :};
+
+
+term ::= term:t TIMES factor:f
+       {: 
+            // Obtener la línea y columna del primer símbolo (e1)
+            int linea = tleft;
+            int columna = tright;
+           // Reporte de multiplicación
+           String operacion = t + " * " + factor;
+           //reporteOperaciones.add( new Operadores("Multiplicación",linea,columna,operacion));
+           RESULT =t * f ; 
+       :}
+       | term:t DIVIDE factor:f
+       {: 
+            // Obtener la línea y columna del primer símbolo (e1)
+            int linea = tleft;
+            int columna = tright;
+           // Reporte de división
+           String operacion = t + " / " + factor;
+
+         //  reporteOperaciones.add( new Operadores("División",linea,columna,operacion));
+           RESULT = t / f ; 
+       :}
+       | factor:f
+       {:
+         
+        RESULT = f; :};
+
+factor ::= LPAREN expre:e RPAREN
+         {:
+         factor= "( "+ e +" )";
+          RESULT = e; :}
+         | NUMERO:n
+         {:
+                // Obtener la línea y columna del primer símbolo (n)
+               // factor = String.valueOf(n);
+                RESULT = n;
+         :};
